@@ -1,0 +1,11 @@
+{
+  "name": "Wheelie Timer",
+  "short_name": "WheelieTimer",
+  "description": "Wheelie timer med rörelsesensor.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": []
+}
