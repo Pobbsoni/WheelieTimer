@@ -1,106 +1,148 @@
 const START_ANGLE = 15;
 const STOP_DELAY = 500;
-
-const timerElement = document.getElementById("timer");
-const bestElement = document.getElementById("best");
-const lastElement = document.getElementById("last");
-const angleElement = document.getElementById("angle");
-const statusElement = document.getElementById("status");
-const calibrateButton = document.getElementById("calibrateButton");
+const SENSOR_INTERVAL = 50;
 
 let calibrated = false;
-let angle = 0;
-let best = Number(localStorage.getItem("wheelieBest") || 0);
-let last = Number(localStorage.getItem("wheelieLast") || 0);
-
-let baseline = 0;
-let wheelieStart = 0;
 let riding = false;
-let stopTimer = null;
-let animationFrame = null;
 
-let latestAcceleration = null;
-let sensorStarted = false;
+let baselineAngle = 0;
+let wheelieStart = 0;
+let stopTimeout = null;
 
-bestElement.textContent = best.toFixed(2);
-lastElement.textContent = last.toFixed(2);
+let currentAngle = 0;
+let currentSpeed = 0;
 
-function updateUI() {
-  timerElement.textContent = riding
-    ? ((performance.now() - wheelieStart) / 1000).toFixed(2)
-    : "0.00";
+let best = Number(localStorage.getItem("wheelieBest")) || 0;
+let last = Number(localStorage.getItem("wheelieLast")) || 0;
+let maxSpeed = Number(localStorage.getItem("maxSpeed")) || 0;
 
-  angleElement.textContent = `${Math.abs(angle).toFixed(1)}°`;
+// -------------------------
+// UI
+// -------------------------
 
-  statusElement.textContent =
-    riding ? "WHEELIE" : calibrated ? "REDO" : "KALIBRERA";
+const timerEl = document.getElementById("timer");
+const speedEl = document.getElementById("speed");
+const angleEl = document.getElementById("angle");
+const maxSpeedEl = document.getElementById("maxSpeed");
+const bestEl = document.getElementById("best");
+const lastEl = document.getElementById("last");
+
+const calibrateButton = document.getElementById("calibrateButton");
+
+const deleteButton = document.getElementById("deleteButton");
+const deleteMenu = document.getElementById("deleteMenu");
+
+const deleteWheelie = document.getElementById("deleteWheelie");
+const deleteSpeed = document.getElementById("deleteSpeed");
+const cancelDelete = document.getElementById("cancelDelete");
+
+// -------------------------
+// Initial UI
+// -------------------------
+
+updateStats();
+
+function updateStats() {
+  bestEl.textContent = best.toFixed(2);
+  lastEl.textContent = last.toFixed(2);
+  maxSpeedEl.textContent = `${Math.round(maxSpeed)} km/h`;
 }
 
-function calculateAngle(acceleration) {
-  const { x, y, z } = acceleration;
+// -------------------------
+// Kalibrering
+// -------------------------
 
-  return Math.atan2(
-    y,
-    Math.sqrt(x * x + z * z)
-  ) * (180 / Math.PI);
+async function calibrate() {
+  try {
+    // iOS kräver uttryckligt tillstånd för motion
+    if (
+      typeof DeviceMotionEvent !== "undefined" &&
+      typeof DeviceMotionEvent.requestPermission === "function"
+    ) {
+      const permission = await DeviceMotionEvent.requestPermission();
+
+      if (permission !== "granted") {
+        alert("Tillåt rörelsesensor för att använda Wheelie Timer.");
+        return;
+      }
+    }
+
+    baselineAngle = currentAngle;
+    calibrated = true;
+
+    timerEl.textContent = "0.00";
+    calibrateButton.textContent = "KALIBRERAD";
+
+  } catch (error) {
+    console.error("Sensor permission error:", error);
+    alert("Kunde inte få åtkomst till rörelsesensorn.");
+  }
 }
+
+calibrateButton.addEventListener("click", calibrate);
+
+// -------------------------
+// Accelerometer / gyrosensor
+// -------------------------
 
 function handleMotion(event) {
-  const acceleration =
-    event.accelerationIncludingGravity;
+  const acceleration = event.accelerationIncludingGravity;
 
   if (!acceleration) return;
 
-  if (
-    acceleration.x == null ||
-    acceleration.y == null ||
-    acceleration.z == null
-  ) {
-    return;
-  }
+  const x = acceleration.x || 0;
+  const y = acceleration.y || 0;
+  const z = acceleration.z || 0;
 
-  latestAcceleration = {
-    x: acceleration.x,
-    y: acceleration.y,
-    z: acceleration.z
-  };
+  const angle =
+    Math.atan2(
+      y,
+      Math.sqrt(x * x + z * z)
+    ) *
+    (180 / Math.PI);
 
-  const currentAngle = calculateAngle(latestAcceleration);
+  currentAngle = angle;
 
-  const relativeAngle =
-    currentAngle - baseline;
+  const relativeAngle = currentAngle - baselineAngle;
 
-  angle = relativeAngle;
+  angleEl.textContent = `${Math.abs(relativeAngle).toFixed(1)}°`;
 
-  if (!calibrated) {
-    updateUI();
-    return;
-  }
+  if (!calibrated) return;
 
-  /*
-   * Start wheelie
-   */
+  // Start wheelie
   if (relativeAngle < -START_ANGLE && !riding) {
-    if (stopTimer) {
-      clearTimeout(stopTimer);
-      stopTimer = null;
+
+    if (stopTimeout) {
+      clearTimeout(stopTimeout);
+      stopTimeout = null;
     }
 
-    wheelieStart = performance.now();
     riding = true;
+    wheelieStart = performance.now();
+
+    timerEl.textContent = "0.00";
   }
 
-  /*
-   * Wheelie is active
-   */
+  // Wheelie pågår
   if (riding) {
+
+    const elapsed =
+      (performance.now() - wheelieStart) / 1000;
+
+    timerEl.textContent = elapsed.toFixed(2);
+
+    // För låg vinkel → starta stopptimer
     if (
       relativeAngle >= -START_ANGLE &&
-      !stopTimer
+      !stopTimeout
     ) {
-      stopTimer = setTimeout(() => {
+
+      stopTimeout = setTimeout(() => {
+
         const finalTime =
           (performance.now() - wheelieStart) / 1000;
+
+        timerEl.textContent = finalTime.toFixed(2);
 
         last = finalTime;
 
@@ -110,151 +152,178 @@ function handleMotion(event) {
 
         localStorage.setItem(
           "wheelieBest",
-          best.toString()
+          best
         );
 
         localStorage.setItem(
           "wheelieLast",
-          last.toString()
+          last
         );
 
-        lastElement.textContent =
-          last.toFixed(2);
-
-        bestElement.textContent =
-          best.toFixed(2);
+        updateStats();
 
         riding = false;
-        stopTimer = null;
+        stopTimeout = null;
 
-        updateUI();
       }, STOP_DELAY);
     }
 
-    /*
-     * Rider went back into wheelie position
-     */
+    // Börjar wheelie igen innan timeout
     if (
       relativeAngle < -START_ANGLE &&
-      stopTimer
+      stopTimeout
     ) {
-      clearTimeout(stopTimer);
-      stopTimer = null;
+
+      clearTimeout(stopTimeout);
+      stopTimeout = null;
     }
   }
-
-  updateUI();
 }
 
-function startSensor() {
-  if (sensorStarted) return;
-
-  window.addEventListener(
-    "devicemotion",
-    handleMotion,
-    true
-  );
-
-  sensorStarted = true;
-}
-
-async function requestSensorPermission() {
-  /*
-   * iOS requires permission to be requested
-   * from a user interaction.
-   */
-
-  if (
-    typeof DeviceMotionEvent !== "undefined" &&
-    typeof DeviceMotionEvent.requestPermission === "function"
-  ) {
-    try {
-      const permission =
-        await DeviceMotionEvent.requestPermission();
-
-      if (permission !== "granted") {
-        alert(
-          "WheelieTimer behöver tillgång till rörelsesensorerna."
-        );
-        return false;
-      }
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        "Kunde inte få tillgång till rörelsesensorerna."
-      );
-
-      return false;
-    }
-  }
-
-  startSensor();
-
-  return true;
-}
-
-async function calibrate() {
-  const permissionGranted =
-    await requestSensorPermission();
-
-  if (!permissionGranted) return;
-
-  /*
-   * Give the browser a moment to receive
-   * a fresh sensor reading.
-   */
-  setTimeout(() => {
-    if (!latestAcceleration) {
-      alert(
-        "Ingen sensorinformation mottogs. Kontrollera att du använder iPhone Safari."
-      );
-      return;
-    }
-
-    const currentAngle =
-      calculateAngle(latestAcceleration);
-
-    baseline = currentAngle;
-
-    angle = 0;
-    calibrated = true;
-    riding = false;
-
-    if (stopTimer) {
-      clearTimeout(stopTimer);
-      stopTimer = null;
-    }
-
-    updateUI();
-  }, 150);
-}
-
-calibrateButton.addEventListener(
-  "click",
-  calibrate
+window.addEventListener(
+  "devicemotion",
+  handleMotion,
+  { passive: true }
 );
 
-/*
- * Keep the timer updating smoothly.
- */
-function animationLoop() {
-  updateUI();
-  animationFrame =
-    requestAnimationFrame(animationLoop);
+// -------------------------
+// GPS
+// -------------------------
+
+function startGPS() {
+
+  if (!navigator.geolocation) {
+    console.log("GPS stöds inte.");
+    return;
+  }
+
+  navigator.geolocation.watchPosition(
+    position => {
+
+      const speed =
+        position.coords.speed;
+
+      if (
+        typeof speed === "number" &&
+        speed >= 0
+      ) {
+
+        currentSpeed = speed * 3.6;
+
+        const roundedSpeed =
+          Math.round(currentSpeed);
+
+        speedEl.textContent =
+          `${roundedSpeed} km/h`;
+
+        if (roundedSpeed > maxSpeed) {
+
+          maxSpeed = roundedSpeed;
+
+          localStorage.setItem(
+            "maxSpeed",
+            maxSpeed
+          );
+
+          maxSpeedEl.textContent =
+            `${maxSpeed} km/h`;
+        }
+      }
+    },
+
+    error => {
+      console.log(
+        "GPS error:",
+        error.message
+      );
+    },
+
+    {
+      enableHighAccuracy: true,
+      maximumAge: 500,
+      timeout: 5000
+    }
+  );
 }
 
-animationLoop();
+startGPS();
 
-/*
- * Clean up when leaving the page.
- */
-window.addEventListener("beforeunload", () => {
-  if (stopTimer) {
-    clearTimeout(stopTimer);
-  }
+// -------------------------
+// Radera-menyn
+// -------------------------
 
-  if (animationFrame) {
-    cancelAnimationFrame(animationFrame);
+deleteButton.addEventListener(
+  "click",
+  () => {
+    deleteMenu.classList.remove("hidden");
   }
-});
+);
+
+cancelDelete.addEventListener(
+  "click",
+  () => {
+    deleteMenu.classList.add("hidden");
+  }
+);
+
+// Radera wheelie-data
+deleteWheelie.addEventListener(
+  "click",
+  () => {
+
+    best = 0;
+    last = 0;
+
+    localStorage.removeItem(
+      "wheelieBest"
+    );
+
+    localStorage.removeItem(
+      "wheelieLast"
+    );
+
+    updateStats();
+
+    deleteMenu.classList.add("hidden");
+  }
+);
+
+// Radera hastighetsdata
+deleteSpeed.addEventListener(
+  "click",
+  () => {
+
+    maxSpeed = 0;
+
+    localStorage.removeItem(
+      "maxSpeed"
+    );
+
+    updateStats();
+
+    deleteMenu.classList.add("hidden");
+  }
+);
+
+// -------------------------
+// Service Worker
+// -------------------------
+
+if ("serviceWorker" in navigator) {
+
+  window.addEventListener(
+    "load",
+    () => {
+
+      navigator.serviceWorker
+        .register("./sw.js")
+        .catch(error => {
+          console.log(
+            "Service Worker error:",
+            error
+          );
+        });
+
+    }
+  );
+}
