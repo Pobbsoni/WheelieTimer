@@ -13,7 +13,19 @@
 </head>
 <body>
   <main class="app">
-    <section class="screen active" id="homeScreen">
+    <section class="screen active" id="startScreen">
+      <h1>WHEELIE TIMER</h1>
+      <div class="label start-label">VÄLJ LÄGE</div>
+      <div class="start-menu">
+        <button data-screen="homeScreen"><strong>WHEELIE</strong><span>Timer, vinkel och rekord</span></button>
+        <button data-screen="speedScreen"><strong>SPEEDOMETER</strong><span>Fart och topphastighet</span></button>
+        <button data-screen="accelerationScreen"><strong>ACCELERATION</strong><span>Mät din acceleration</span></button>
+        <button data-screen="rideScreen"><strong>KÖRNINGSPASS</strong><span>Fart och wheelies i samma pass</span></button>
+      </div>
+      <button class="text-button" data-screen="settingsScreen">INSTÄLLNINGAR</button>
+    </section>
+
+    <section class="screen" id="homeScreen">
       <h1>WHEELIE TIMER</h1>
       <div class="timer home-timer">0.00</div><div class="label">SEKUNDER</div>
       <div class="speed home-speed">0 km/h</div><div class="label">HASTIGHET</div>
@@ -26,7 +38,7 @@
     </section>
 
     <section class="screen" id="wheelieScreen">
-      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>WHEELIE</h1>
+      <button class="back" data-screen="startScreen">‹ TILLBAKA</button><h1>WHEELIE</h1>
       <div class="timer wheelie-timer">0.00</div><div class="label">SEKUNDER</div>
       <div class="info-row"><div><div class="value angle-value">0.0°</div><div class="label">VINKEL</div></div><div><div class="value wheelie-speed">0 km/h</div><div class="label">HASTIGHET</div></div></div>
       <div class="divider"></div><div class="info-row"><div><div class="value best-value">0.00</div><div class="label">BÄSTA</div></div><div><div class="value last-value">0.00</div><div class="label">SENASTE</div></div></div>
@@ -34,7 +46,7 @@
     </section>
 
     <section class="screen" id="speedScreen">
-      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>SPEEDOMETER</h1>
+      <button class="back" data-screen="startScreen">‹ TILLBAKA</button><h1>SPEEDOMETER</h1>
       <div class="big-speed speed-screen-value">0</div><div class="label speed-unit">KM/H</div>
       <div class="divider"></div><div class="value max-speed-value">0 km/h</div><div class="label">TOPPFART</div>
       <div class="warning-readout">FARTGRÄNS: <span id="speedLimitReadout">25 km/h</span></div>
@@ -42,7 +54,7 @@
     </section>
 
     <section class="screen" id="accelerationScreen">
-      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>ACCELERATION</h1>
+      <button class="back" data-screen="startScreen">‹ TILLBAKA</button><h1>ACCELERATION</h1>
       <div class="setting-title">MÅLHASTIGHET <strong id="targetSpeedValue">20 km/h</strong></div>
       <input id="targetSpeed" type="range" min="1" max="100" value="20">
       <div class="range-ends"><span>1 km/h</span><span>100 km/h</span></div>
@@ -53,13 +65,13 @@
     </section>
 
     <section class="screen" id="rideScreen">
-      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1 id="rideTitle">KÖRNINGSPASS</h1>
+      <button class="back" data-screen="startScreen">‹ TILLBAKA</button><h1 id="rideTitle">KÖRNINGSPASS</h1>
       <div id="rideLive"><div class="timer" id="rideTime">00:00</div><div class="label">TID</div><div class="big-speed ride-speed-value">0</div><div class="label speed-unit">KM/H</div><div class="ride-grid"><div><strong id="rideTopSpeed">0 km/h</strong><span>TOPPFART</span></div><div><strong id="rideWheelies">0</strong><span>WHEELIES</span></div><div><strong id="rideLongest">0.00 s</strong><span>LÄNGSTA</span></div></div><button class="primary" id="rideButton">STARTA PASS</button></div>
       <div id="rideSummary" class="hidden"><div class="summary-row">Tid <strong id="summaryTime">00:00</strong></div><div class="summary-row">Topphastighet <strong id="summaryTop">0 km/h</strong></div><div class="summary-row">Wheelies <strong id="summaryWheelies">0</strong></div><div class="summary-row">Längsta wheelie <strong id="summaryLongest">0.00 s</strong></div><button class="primary" id="newRideButton">NYTT PASS</button></div>
     </section>
 
     <section class="screen" id="settingsScreen">
-      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>INSTÄLLNINGAR</h1>
+      <button class="back" data-screen="startScreen">‹ TILLBAKA</button><h1>INSTÄLLNINGAR</h1>
       <div class="settings-list">
         <label class="setting-title">WHEELIE-KÄNSLIGHET<select id="sensitivity"><option value="easy">Lätt</option><option value="normal">Normal</option><option value="hard">Svår</option></select></label>
         <button class="primary calibrate-button">KALIBRERA SENSOR</button>

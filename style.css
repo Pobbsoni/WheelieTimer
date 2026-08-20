@@ -19,6 +19,13 @@ h1 { margin: 0 0 30px; font-size: 23px; letter-spacing: 4px; }
 .primary:active, .menu-grid button:active { background: #202020; border-color: var(--accent); }
 .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: min(350px, 92vw); margin-top: 30px; }
 .menu-grid button { margin: 0; min-height: 56px; }
+.start-label { margin: -10px 0 22px; }
+.start-menu { display: grid; width: min(390px, 94vw); gap: 11px; }
+.start-menu button { padding: 18px; border: 1px solid #303030; border-radius: 14px; text-align: left; }
+.start-menu button:active { border-color: var(--accent); background: #171717; }
+.start-menu strong, .start-menu span { display: block; }
+.start-menu strong { font-size: 14px; letter-spacing: 2px; }
+.start-menu span { margin-top: 7px; color: var(--muted); font-size: 10px; letter-spacing: .5px; }
 .text-button { margin-top: 24px; color: var(--muted); font-size: 11px; letter-spacing: 2px; }
 .back { align-self: flex-start; margin-bottom: auto; color: var(--muted); letter-spacing: 1.5px; font-size: 11px; }
 .back + h1 { margin-top: -40px; }

@@ -4,7 +4,7 @@ const SENSITIVITY = {
   hard: { start: 22, stop: 15 }
 };
 const START_DELAY = 150;
-const STOP_DELAY = 400;
+const STOP_DELAY = 1000;
 const ANGLE_SMOOTHING = 0.2;
 const ANGLE_DISPLAY_INTERVAL = 200;
 
