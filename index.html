@@ -7,88 +7,74 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Wheelie Timer">
-
   <title>Wheelie Timer</title>
-
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
   <main class="app">
-
-    <h1>WHEELIE TIMER</h1>
-
-    <div id="timer" class="timer">0.00</div>
-    <div class="label">SEKUNDER</div>
-
-    <div id="speed" class="speed">0 km/h</div>
-    <div class="label">SPEED</div>
-
-    <section class="info-row">
-
-      <div class="info">
-        <div id="angle" class="value">0.0°</div>
-        <div class="label">VINKEL</div>
-      </div>
-
-      <div class="info">
-        <div id="maxSpeed" class="value">0 km/h</div>
-        <div class="label">HASTIGAST</div>
-      </div>
-
+    <section class="screen active" id="homeScreen">
+      <h1>WHEELIE TIMER</h1>
+      <div class="timer home-timer">0.00</div><div class="label">SEKUNDER</div>
+      <div class="speed home-speed">0 km/h</div><div class="label">HASTIGHET</div>
+      <div class="info-row"><div><div class="value angle-value">0.0°</div><div class="label">VINKEL</div></div><div><div class="value max-speed-value">0 km/h</div><div class="label">HASTIGAST</div></div></div>
+      <div class="divider"></div>
+      <div class="info-row"><div><div class="value best-value">0.00</div><div class="label">BÄSTA</div></div><div><div class="value last-value">0.00</div><div class="label">SENASTE</div></div></div>
+      <button class="primary calibrate-button">KALIBRERA</button>
+      <div class="menu-grid"><button data-screen="wheelieScreen">WHEELIE</button><button data-screen="speedScreen">SPEEDOMETER</button><button data-screen="accelerationScreen">ACCELERATION</button><button data-screen="rideScreen">KÖRNINGSPASS</button></div>
+      <button class="text-button" data-screen="settingsScreen">INSTÄLLNINGAR</button>
     </section>
 
-    <div class="divider"></div>
-
-    <section class="stats">
-
-      <div class="stat">
-        <div id="best" class="value">0.00</div>
-        <div class="label">BÄSTA</div>
-      </div>
-
-      <div class="stat">
-        <div id="last" class="value">0.00</div>
-        <div class="label">SENASTE</div>
-      </div>
-
+    <section class="screen" id="wheelieScreen">
+      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>WHEELIE</h1>
+      <div class="timer wheelie-timer">0.00</div><div class="label">SEKUNDER</div>
+      <div class="info-row"><div><div class="value angle-value">0.0°</div><div class="label">VINKEL</div></div><div><div class="value wheelie-speed">0 km/h</div><div class="label">HASTIGHET</div></div></div>
+      <div class="divider"></div><div class="info-row"><div><div class="value best-value">0.00</div><div class="label">BÄSTA</div></div><div><div class="value last-value">0.00</div><div class="label">SENASTE</div></div></div>
+      <button class="primary calibrate-button">KALIBRERA</button>
     </section>
 
-    <button id="calibrateButton">KALIBRERA</button>
+    <section class="screen" id="speedScreen">
+      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>SPEEDOMETER</h1>
+      <div class="big-speed speed-screen-value">0</div><div class="label speed-unit">KM/H</div>
+      <div class="divider"></div><div class="value max-speed-value">0 km/h</div><div class="label">TOPPFART</div>
+      <div class="warning-readout">FARTGRÄNS: <span id="speedLimitReadout">25 km/h</span></div>
+      <button class="primary" id="speedRideButton">STARTA PASS</button>
+    </section>
 
-    <button id="deleteButton" class="delete-button">
-      RADERA SPARNINGAR
-    </button>
+    <section class="screen" id="accelerationScreen">
+      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>ACCELERATION</h1>
+      <div class="setting-title">MÅLHASTIGHET <strong id="targetSpeedValue">20 km/h</strong></div>
+      <input id="targetSpeed" type="range" min="1" max="100" value="20">
+      <div class="range-ends"><span>1 km/h</span><span>100 km/h</span></div>
+      <div class="timer" id="accelTimer">0.00</div><div class="label">SEKUNDER</div>
+      <div class="value accel-speed-value">0 km/h</div><div class="label">NUVARANDE HASTIGHET</div>
+      <div class="status" id="accelStatus">REDO</div>
+      <button class="primary" id="accelButton">STARTA TEST</button>
+    </section>
 
-    <div id="deleteMenu" class="delete-menu hidden">
+    <section class="screen" id="rideScreen">
+      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1 id="rideTitle">KÖRNINGSPASS</h1>
+      <div id="rideLive"><div class="timer" id="rideTime">00:00</div><div class="label">TID</div><div class="big-speed ride-speed-value">0</div><div class="label speed-unit">KM/H</div><div class="ride-grid"><div><strong id="rideTopSpeed">0 km/h</strong><span>TOPPFART</span></div><div><strong id="rideWheelies">0</strong><span>WHEELIES</span></div><div><strong id="rideLongest">0.00 s</strong><span>LÄNGSTA</span></div></div><button class="primary" id="rideButton">STARTA PASS</button></div>
+      <div id="rideSummary" class="hidden"><div class="summary-row">Tid <strong id="summaryTime">00:00</strong></div><div class="summary-row">Topphastighet <strong id="summaryTop">0 km/h</strong></div><div class="summary-row">Wheelies <strong id="summaryWheelies">0</strong></div><div class="summary-row">Längsta wheelie <strong id="summaryLongest">0.00 s</strong></div><button class="primary" id="newRideButton">NYTT PASS</button></div>
+    </section>
 
-      <div class="delete-title">
-        RADERA SPARNINGAR
+    <section class="screen" id="settingsScreen">
+      <button class="back" data-screen="homeScreen">‹ TILLBAKA</button><h1>INSTÄLLNINGAR</h1>
+      <div class="settings-list">
+        <label class="setting-title">WHEELIE-KÄNSLIGHET<select id="sensitivity"><option value="easy">Lätt</option><option value="normal">Normal</option><option value="hard">Svår</option></select></label>
+        <button class="primary calibrate-button">KALIBRERA SENSOR</button>
+        <label class="toggle">VIBRATIONER <input id="vibration" type="checkbox"><span></span></label>
+        <label class="toggle">LJUD <input id="sound" type="checkbox"><span></span></label>
+        <label class="toggle">MÖRKT KÖRLÄGE <input id="darkMode" type="checkbox" checked><span></span></label>
+        <label class="setting-title">ACCELERATION STARTFART <strong id="accelStartValue">1.0 km/h</strong><input id="accelStart" type="range" min="0" max="10" step="0.5" value="1"></label>
+        <label class="setting-title">FARTGRÄNS <strong id="speedLimitValue">25 km/h</strong><input id="speedLimit" type="range" min="0" max="100" value="25"></label>
+        <label class="setting-title">ENHETER<select id="units"><option value="kmh">km/h</option><option value="mph">mph</option></select></label>
+        <label class="setting-title">ACCENTFÄRG<select id="accent"><option value="#7dff48">Grön</option><option value="#55aaff">Blå</option><option value="#ff5c5c">Röd</option></select></label>
+        <div class="divider"></div><div class="label">DATA</div>
+        <button class="danger" id="clearWheelie">RADERA WHEELIE-DATA</button><button class="danger" id="clearSpeed">RADERA HASTIGHETSDATA</button><button class="danger" id="resetSettings">ÅTERSTÄLL INSTÄLLNINGAR</button>
       </div>
-
-      <div class="delete-question">
-        Vad vill du radera?
-      </div>
-
-      <button id="deleteWheelie">
-        WHEELIE
-      </button>
-
-      <button id="deleteSpeed">
-        HASTIGHET
-      </button>
-
-      <button id="cancelDelete" class="cancel">
-        AVBRYT
-      </button>
-
-    </div>
-
+    </section>
   </main>
-
   <script src="script.js"></script>
-
 </body>
 </html>
