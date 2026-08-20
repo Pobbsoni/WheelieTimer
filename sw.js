@@ -1,4 +1,4 @@
-const CACHE_NAME = "wheelie-timer-v1";
+const CACHE_NAME = "wheelie-timer-v2";
 
 const FILES = [
   "./",
