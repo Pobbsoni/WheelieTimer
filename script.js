@@ -1,15 +1,24 @@
-const START_ANGLE = 15;
-const STOP_DELAY = 500;
-const SENSOR_INTERVAL = 50;
+// Hysteresis + tidsfiltrering gör att små vibrationer inte startar om timern.
+// Värdena räknas från vinkeln vid kalibrering.
+const START_ANGLE = 18;
+const STOP_ANGLE = 12;
+const START_DELAY = 150;
+const STOP_DELAY = 400;
+const ANGLE_SMOOTHING = 0.2;
+const ANGLE_DISPLAY_INTERVAL = 200;
 
 let calibrated = false;
 let riding = false;
 
 let baselineAngle = 0;
 let wheelieStart = 0;
-let stopTimeout = null;
+let startCandidateSince = null;
+let stopCandidateSince = null;
 
 let currentAngle = 0;
+let filteredRelativeAngle = 0;
+let hasFilteredAngle = false;
+let lastAngleDisplayUpdate = 0;
 let currentSpeed = 0;
 
 let best = Number(localStorage.getItem("wheelieBest")) || 0;
@@ -68,6 +77,11 @@ async function calibrate() {
     }
 
     baselineAngle = currentAngle;
+    filteredRelativeAngle = 0;
+    hasFilteredAngle = false;
+    startCandidateSince = null;
+    stopCandidateSince = null;
+    riding = false;
     calibrated = true;
 
     timerEl.textContent = "0.00";
@@ -105,78 +119,71 @@ function handleMotion(event) {
 
   const relativeAngle = currentAngle - baselineAngle;
 
-  angleEl.textContent = `${Math.abs(relativeAngle).toFixed(1)}°`;
+  // Ett enkelt lågpassfilter dämpar vibrationer från elsparken utan att
+  // göra den faktiska rörelsen märkbart trög.
+  if (!hasFilteredAngle) {
+    filteredRelativeAngle = relativeAngle;
+    hasFilteredAngle = true;
+  } else {
+    filteredRelativeAngle +=
+      (relativeAngle - filteredRelativeAngle) * ANGLE_SMOOTHING;
+  }
+
+  // Uppdatera bara siffran på skärmen fem gånger per sekund. Själva
+  // sensormätningen och wheelie-logiken nedan körs fortfarande varje gång.
+  const displayNow = performance.now();
+  if (displayNow - lastAngleDisplayUpdate >= ANGLE_DISPLAY_INTERVAL) {
+    angleEl.textContent = `${Math.abs(filteredRelativeAngle).toFixed(1)}°`;
+    lastAngleDisplayUpdate = displayNow;
+  }
 
   if (!calibrated) return;
 
-  // Start wheelie
-  if (relativeAngle < -START_ANGLE && !riding) {
+  const now = performance.now();
 
-    if (stopTimeout) {
-      clearTimeout(stopTimeout);
-      stopTimeout = null;
+  if (!riding) {
+    // Vinkeln måste vara över startgränsen oavbrutet i 150 ms.
+    if (filteredRelativeAngle < -START_ANGLE) {
+      startCandidateSince ??= now;
+
+      if (now - startCandidateSince >= START_DELAY) {
+        riding = true;
+        wheelieStart = now;
+        startCandidateSince = null;
+        timerEl.textContent = "0.00";
+      }
+    } else {
+      startCandidateSince = null;
     }
 
-    riding = true;
-    wheelieStart = performance.now();
-
-    timerEl.textContent = "0.00";
+    return;
   }
 
-  // Wheelie pågår
-  if (riding) {
+  const elapsed = (now - wheelieStart) / 1000;
+  timerEl.textContent = elapsed.toFixed(2);
 
-    const elapsed =
-      (performance.now() - wheelieStart) / 1000;
+  // Stoppa först när vinkeln återgår under den lägre stoppgränsen i 400 ms.
+  // Detta är hysteresis: start kräver 18°, stopp sker först vid 12°.
+  if (filteredRelativeAngle >= -STOP_ANGLE) {
+    stopCandidateSince ??= now;
 
-    timerEl.textContent = elapsed.toFixed(2);
+    if (now - stopCandidateSince >= STOP_DELAY) {
+      const finalTime = (now - wheelieStart) / 1000;
+      timerEl.textContent = finalTime.toFixed(2);
 
-    // För låg vinkel → starta stopptimer
-    if (
-      relativeAngle >= -START_ANGLE &&
-      !stopTimeout
-    ) {
+      last = finalTime;
+      if (finalTime > best) best = finalTime;
 
-      stopTimeout = setTimeout(() => {
+      localStorage.setItem("wheelieBest", best);
+      localStorage.setItem("wheelieLast", last);
+      updateStats();
 
-        const finalTime =
-          (performance.now() - wheelieStart) / 1000;
-
-        timerEl.textContent = finalTime.toFixed(2);
-
-        last = finalTime;
-
-        if (finalTime > best) {
-          best = finalTime;
-        }
-
-        localStorage.setItem(
-          "wheelieBest",
-          best
-        );
-
-        localStorage.setItem(
-          "wheelieLast",
-          last
-        );
-
-        updateStats();
-
-        riding = false;
-        stopTimeout = null;
-
-      }, STOP_DELAY);
+      riding = false;
+      stopCandidateSince = null;
     }
-
-    // Börjar wheelie igen innan timeout
-    if (
-      relativeAngle < -START_ANGLE &&
-      stopTimeout
-    ) {
-
-      clearTimeout(stopTimeout);
-      stopTimeout = null;
-    }
+  } else {
+    // En kort dipp avslutar inte en pågående wheelie.
+    stopCandidateSince = null;
   }
 }
 
